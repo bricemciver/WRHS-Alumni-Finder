@@ -8,7 +8,7 @@ var geojson;
 var info;
 
 function initializeMap() {
-    map = L.map('map');
+    map = L.map('map').setView([37.8, -96], 5);
 
     L.tileLayer('http://otile{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.png', {
         attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Tiles Courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a>',
@@ -46,24 +46,35 @@ function initializeMap() {
     };
 
     info.addTo(map);
+}
 
-    $.ajax({
-        url: DATA_SERVICE_URL,
-        dataType: 'json'
-    }).done(function (data) {
-        geojson = L.geoJson(data, {
-            style: style,
-            onEachFeature: onEachFeature,
-            pointToLayer: pointToLayer
+function checkPassword(password) {
+    var expectedPassword = [1675120786,1692610681,1777672631,-1813029098,-1341260827,-1647762853,257417061,-1933570901];
+    var parsedPassword = sjcl.misc.pbkdf2(password, 'A3F7610999D65B3E', 1000, 256);
+    if (JSON.stringify(parsedPassword) === JSON.stringify(expectedPassword)) {
+        debugger;
+        $('.passwordErrorText').text('');
+        $.ajax({
+            url: DATA_SERVICE_URL,
+            dataType: 'json'
+        }).done(function (data) {
+            geojson = L.geoJson(data, {
+                style: style,
+                onEachFeature: onEachFeature,
+                pointToLayer: pointToLayer
+            });
+            map.fitBounds(geojson.getBounds(), {
+                padding: [60, 60]
+            });
+            DEFAULT_ZOOM = map.getZoom();
+            DEFAULT_CENTER = map.getCenter();
+            markers.addLayer(geojson);
+            markers.addTo(map);
+            $('.passwordEntry').remove();
         });
-        map.fitBounds(geojson.getBounds(), {
-            padding: [60, 60]
-        });
-        DEFAULT_ZOOM = map.getZoom();
-        DEFAULT_CENTER = map.getCenter();
-        markers.addLayer(geojson);
-        markers.addTo(map);
-    });
+    } else {
+        $('.passwordErrorText').text('Wrong password.');
+    }
 }
 
 function style(feature) {
