@@ -38,3 +38,18 @@ html, body, #map {
     color: red;
     font-weight: bold;
 }
+
+#search-desc {
+    margin:0;
+    padding:0;
+}
+
+.name {
+    font-size: 13px;
+    color: black;
+}
+
+.address {
+    font-size: 11px;
+    color: #999;
+}
