@@ -6,6 +6,8 @@ var map;
 var markers;
 var geojson;
 var info;
+var search;
+var searchArray = [];
 
 function initializeMap() {
     map = L.map('map').setView([37.8, -96], 5);
@@ -18,6 +20,16 @@ function initializeMap() {
     markers = L.markerClusterGroup({
         showCoverageOnHover: false
     });
+
+    search = L.control({position:'topleft'});
+
+    search.onAdd = function (map) {
+        this._div = L.DomUtil.create('div', 'ui-search');
+        this._div.innerHTML = '<input id="search"/>';
+        return this._div;
+    };
+
+    search.addTo(map);
 
     info = L.control();
 
@@ -89,6 +101,27 @@ function style(feature) {
 }
 
 function onEachFeature(feature, layer) {
+    var props = feature.properties;
+    var label = props.firstName + ' ';
+    if (props.maidenName && props.maidenName !== props.lastName) {
+     label += '(' + props.maidenName + ') ';
+    }
+    label += props.lastName;
+    var desc = props.address;
+    if (props.address) {
+        desc += ', ';
+    }
+    desc += props.city;
+    if (props.city) {
+        desc += ', ';
+    }
+    desc += props.state;
+    searchArray.push({
+        value: feature.id,
+        label: label,
+        desc: desc,
+        latlng: layer.getLatLng()
+    });
     layer.on({
         mouseover: highlightFeature,
         mouseout: resetHighlight,
@@ -125,4 +158,24 @@ function zoomToFeature(e) {
 
 $(document).ready(function () {
     initializeMap();
+    $('#search').autocomplete({
+        minLength: 0,
+        source: searchArray,
+        focus: function(event, ui) {
+            $("#search").val(ui.item.label);
+            return false;
+        },
+        select: function(event, ui) {
+            $("#search").val(ui.item.label + ", " + ui.item.desc);
+            map.setView(ui.item.latlng, AUTO_ZOOM);
+            return false;
+        }
+    }).autocomplete("instance")._renderItem = function(ul, item) {
+        return $("<li>").append("<a><span class='name'>" + item.label + "</span><br><span class='address'>" + item.desc + "</span></a>").appendTo(ul);
+    };
+    $('#password').on("keydown", function(e) {
+        if (e.keyCode == 13) {
+            checkPassword($('#password').val());
+        }
+    })
 });
